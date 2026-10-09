@@ -1,0 +1,63 @@
+def dfs(board, goal, visited):
+
+    if board == goal:
+        print("Goal State Found!")
+        print_board(board)
+        return True
+
+    if tuple(board) in visited:
+        return False
+
+    visited.add(tuple(board))
+
+    pos = board.index(0)
+    row = pos // 3
+    col = pos % 3
+
+    if row > 0:
+        new_board = board.copy()
+        new_board[pos], new_board[pos - 3] = new_board[pos - 3], new_board[pos]
+
+        if dfs(new_board, goal, visited):
+            return True
+
+    if row < 2:
+        new_board = board.copy()
+        new_board[pos], new_board[pos + 3] = new_board[pos + 3], new_board[pos]
+
+        if dfs(new_board, goal, visited):
+            return True
+
+    if col > 0:
+        new_board = board.copy()
+        new_board[pos], new_board[pos - 1] = new_board[pos - 1], new_board[pos]
+
+        if dfs(new_board, goal, visited):
+            return True
+
+    if col < 2:
+        new_board = board.copy()
+        new_board[pos], new_board[pos + 1] = new_board[pos + 1], new_board[pos]
+
+        if dfs(new_board, goal, visited):
+            return True
+
+    return False
+
+
+def print_board(board):
+    for i in range(0, 9, 3):
+        print(board[i:i + 3])
+    print()
+
+
+initial = [1, 2, 3, 0, 4, 6, 7, 5, 8]
+goal = [1, 2, 3, 4, 5, 6, 7, 8, 0]
+
+print("Initial State:")
+print_board(initial)
+
+visited = set()
+
+if not dfs(initial, goal, visited):
+    print("Solution Not Found")
