@@ -1,0 +1,106 @@
+def dls(board, goal, limit, path):
+
+    if board == goal:
+        return path.copy()
+
+    if limit == 0:
+        return None
+
+    pos = board.index(0)
+    row = pos // 3
+    col = pos % 3
+
+    if row > 0:
+        new_board = board.copy()
+        new_board[pos], new_board[pos - 3] = new_board[pos - 3], new_board[pos]
+
+        if new_board not in path:
+            path.append(new_board)
+
+            result = dls(new_board, goal, limit - 1, path)
+
+            if result is not None:
+                return result
+
+            path.pop()
+
+    if row < 2:
+        new_board = board.copy()
+        new_board[pos], new_board[pos + 3] = new_board[pos + 3], new_board[pos]
+
+        if new_board not in path:
+            path.append(new_board)
+
+            result = dls(new_board, goal, limit - 1, path)
+
+            if result is not None:
+                return result
+
+            path.pop()
+
+    if col > 0:
+        new_board = board.copy()
+        new_board[pos], new_board[pos - 1] = new_board[pos - 1], new_board[pos]
+
+        if new_board not in path:
+            path.append(new_board)
+
+            result = dls(new_board, goal, limit - 1, path)
+
+            if result is not None:
+                return result
+
+            path.pop()
+
+    if col < 2:
+        new_board = board.copy()
+        new_board[pos], new_board[pos + 1] = new_board[pos + 1], new_board[pos]
+
+        if new_board not in path:
+            path.append(new_board)
+
+            result = dls(new_board, goal, limit - 1, path)
+
+            if result is not None:
+                return result
+
+            path.pop()
+
+    return None
+
+
+def ids(initial, goal):
+    limit = 0
+
+    while True:
+        print("Depth Limit:", limit)
+
+        path = [initial.copy()]
+        result = dls(initial, goal, limit, path)
+
+        if result is not None:
+            print("Goal State Found!")
+            print("Number of moves:", len(result) - 1)
+
+            for step, state in enumerate(result):
+                print("Step", step)
+                print_board(state)
+
+            return
+
+        limit += 1
+
+
+def print_board(board):
+    for i in range(0, 9, 3):
+        print(board[i:i + 3])
+    print()
+
+
+initial = [1, 2, 3, 0, 4, 6, 7, 5, 8]
+goal = [1, 2, 3, 4, 5, 6, 7, 8, 0]
+
+print("Initial State:")
+print_board(initial)
+
+ids(initial, goal)
