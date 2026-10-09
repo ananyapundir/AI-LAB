@@ -1,0 +1,102 @@
+import heapq
+def manhattan_distance(state, goal):
+    distance = 0
+
+    for i in range(9):
+        tile = state[i]
+
+        if tile != 0:
+            goal_pos = goal.index(tile)
+
+            row1, col1 = divmod(i, 3)
+            row2, col2 = divmod(goal_pos, 3)
+
+            distance += abs(row1 - row2) + abs(col1 - col2)
+
+    return distance
+def get_neighbors(state):
+    neighbors = []
+    pos = state.index(0)
+    row = pos // 3
+    col = pos % 3
+
+    moves = [(-1, 0), (1, 0), (0, -1), (0, 1)]
+
+    for dr, dc in moves:
+        r = row + dr
+        c = col + dc
+
+        if 0 <= r < 3 and 0 <= c < 3:
+            new_pos = r * 3 + c
+            new_state = list(state)
+
+            new_state[pos], new_state[new_pos] = (
+                new_state[new_pos], new_state[pos]
+            )
+
+            neighbors.append(tuple(new_state))
+
+    return neighbors
+def a_star(start, goal):
+    open_list = []
+    h = manhattan_distance(start, goal)
+    heapq.heappush(open_list, (h, start))
+
+    g = {start: 0}
+    parent = {start: None}
+
+    while open_list:
+        f, current = heapq.heappop(open_list)
+
+        if current == goal:
+            path = []
+
+            while current is not None:
+                path.append(current)
+                current = parent[current]
+
+            return path[::-1]
+
+        for neighbor in get_neighbors(current):
+            new_g = g[current] + 1
+
+            if neighbor not in g or new_g < g[neighbor]:
+                g[neighbor] = new_g
+                h = manhattan_distance(neighbor, goal)
+                f = new_g + h
+
+                parent[neighbor] = current
+                heapq.heappush(open_list, (f, neighbor))
+
+    return None
+def print_board(state):
+    for i in range(0, 9, 3):
+        print(state[i:i + 3])
+    print()
+
+
+start = (
+    2, 8, 3,
+    1, 6, 4,
+    0, 7, 5
+)
+
+goal = (
+    1, 2, 3,
+    8, 0, 4,
+    7, 6, 5
+)
+
+print("A* - Manhattan Distance Heuristic")
+
+path = a_star(start, goal)
+
+if path:
+    print("Goal State Found!")
+    print("Number of moves:", len(path) - 1)
+
+    for i, state in enumerate(path):
+        print("Step", i)
+        print_board(state)
+else:
+    print("Solution not found")
