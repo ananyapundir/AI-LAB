@@ -1,0 +1,148 @@
+from typing import List, Dict, Union
+
+
+class Expr:
+    def __init__(self, op, *args):
+        self.op = op
+        self.args = [
+            arg if isinstance(arg, Expr) else Expr(arg)
+            for arg in args
+        ]
+
+    def __repr__(self):
+        if not self.args:
+            return str(self.op)
+
+        if len(self.args) == 1:
+            return f"(~{self.args[0]})"
+
+        return f"({self.args[0]} {self.op} {self.args[1]})"
+
+
+def Symbol(name: str) -> Expr:
+    return Expr(name)
+
+
+def Not(p: Expr) -> Expr:
+    return Expr("~", p)
+
+
+def And(p: Expr, q: Expr) -> Expr:
+    return Expr("&", p, q)
+
+
+def Or(p: Expr, q: Expr) -> Expr:
+    return Expr("|", p, q)
+
+
+def Implies(p: Expr, q: Expr) -> Expr:
+    return Expr("==>", p, q)
+
+
+def Bicond(p: Expr, q: Expr) -> Expr:
+    return Expr("<=>", p, q)
+
+
+def evaluate(expr: Expr, model: Dict[str, bool]) -> bool:
+    if not expr.args:
+        return model[expr.op]
+
+    op = expr.op
+
+    if op == "~":
+        return not evaluate(expr.args[0], model)
+
+    elif op == "&":
+        return (
+            evaluate(expr.args[0], model)
+            and evaluate(expr.args[1], model)
+        )
+
+    elif op == "|":
+        return (
+            evaluate(expr.args[0], model)
+            or evaluate(expr.args[1], model)
+        )
+
+    elif op == "==>":
+        return (
+            not evaluate(expr.args[0], model)
+            or evaluate(expr.args[1], model)
+        )
+
+    elif op == "<=>":
+        return (
+            evaluate(expr.args[0], model)
+            == evaluate(expr.args[1], model)
+        )
+
+    else:
+        raise ValueError(f"Unknown operator: {op}")
+
+
+def get_symbols(expr: Expr) -> set:
+    if not expr.args:
+        return {expr.op}
+
+    symbols = set()
+
+    for arg in expr.args:
+        symbols.update(get_symbols(arg))
+
+    return symbols
+
+
+def tt_check_all(
+    kb: Expr,
+    alpha: Expr,
+    symbols: List[str],
+    model: Dict[str, bool]
+) -> bool:
+
+    if not symbols:
+        if evaluate(kb, model):
+            return evaluate(alpha, model)
+        else:
+            return True
+
+    p = symbols[0]
+    rest = symbols[1:]
+
+    return (
+        tt_check_all(
+            kb, alpha, rest,
+            {**model, p: True}
+        )
+        and
+        tt_check_all(
+            kb, alpha, rest,
+            {**model, p: False}
+        )
+    )
+
+
+def tt_entails(kb: Expr, alpha: Expr) -> bool:
+    symbols = sorted(
+        list(get_symbols(kb) | get_symbols(alpha))
+    )
+
+    return tt_check_all(kb, alpha, symbols, {})
+
+
+P = Symbol("P")
+Q = Symbol("Q")
+R = Symbol("R")
+
+KB = And(P, Implies(P, Q))
+
+alpha = Q
+
+result = tt_entails(KB, alpha)
+
+print("Knowledge Base:", KB)
+print("Query:", alpha)
+
+if result:
+    print("KB entails alpha (True)")
+else:
+    print("KB does not entail alpha (False)")
