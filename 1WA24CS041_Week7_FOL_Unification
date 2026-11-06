@@ -1,0 +1,167 @@
+def is_variable(term):
+    return isinstance(term, str) and term.islower() and term.isalpha()
+
+
+def split_arguments(arguments):
+    result = []
+    bracket_count = 0
+    start = 0
+
+    for i in range(len(arguments)):
+        if arguments[i] == '(':
+            bracket_count += 1
+
+        elif arguments[i] == ')':
+            bracket_count -= 1
+
+        elif arguments[i] == ',' and bracket_count == 0:
+            result.append(arguments[start:i].strip())
+            start = i + 1
+
+    result.append(arguments[start:].strip())
+    return result
+
+def parse_expression(expression):
+    expression = expression.strip()
+
+    if '(' not in expression:
+        return expression
+
+    position = expression.find('(')
+
+    predicate = expression[:position].strip()
+    arguments = expression[position + 1:-1]
+
+    parsed_arguments = []
+
+    for arg in split_arguments(arguments):
+        parsed_arguments.append(parse_expression(arg))
+
+    return (predicate, parsed_arguments)
+
+
+def apply_substitution(term, substitution):
+    if isinstance(term, str):
+        while term in substitution:
+            term = substitution[term]
+
+        return term
+
+    predicate = term[0]
+    arguments = term[1]
+
+    new_arguments = []
+
+    for arg in arguments:
+        new_arguments.append(
+            apply_substitution(arg, substitution)
+        )
+
+    return (predicate, new_arguments)
+
+
+def occurs_check(variable, term, substitution):
+    term = apply_substitution(term, substitution)
+
+    if term == variable:
+        return True
+
+    if isinstance(term, tuple):
+        for arg in term[1]:
+            if occurs_check(variable, arg, substitution):
+                return True
+
+    return False
+
+
+def substitute(variable, value, substitution):
+    if occurs_check(variable, value, substitution):
+        return False
+
+    substitution[variable] = value
+
+    for key in list(substitution.keys()):
+        substitution[key] = apply_substitution(
+            substitution[key], substitution
+        )
+
+    return True
+
+
+def unify(term1, term2, substitution):
+
+    term1 = apply_substitution(term1, substitution)
+    term2 = apply_substitution(term2, substitution)
+
+
+    if term1 == term2:
+        return True
+
+    if is_variable(term1):
+        return substitute(term1, term2, substitution)
+
+    if is_variable(term2):
+        return substitute(term2, term1, substitution)
+
+    if isinstance(term1, tuple) and isinstance(term2, tuple):
+
+        if term1[0] != term2[0]:
+            return False
+        
+        if len(term1[1]) != len(term2[1]):
+            return False
+        
+        for arg1, arg2 in zip(term1[1], term2[1]):
+
+            if not unify(arg1, arg2, substitution):
+                return False
+
+        return True
+
+    return False
+
+
+def display_substitution(substitution):
+
+    print("\nSubstitution Set:")
+
+    if len(substitution) == 0:
+        print("No substitutions required.")
+
+    else:
+        for variable, value in substitution.items():
+            print(variable, "=", value)
+
+
+def perform_unification(expression1, expression2):
+
+    print("\nFirst Expression:", expression1)
+    print("Second Expression:", expression2)
+
+    term1 = parse_expression(expression1)
+    term2 = parse_expression(expression2)
+
+    substitution = {}
+
+   
+
+    result = unify(term1, term2, substitution)
+
+    if result:
+        
+        display_substitution(substitution)
+
+        print("\nUnified Expression:")
+        print(apply_substitution(term1, substitution))
+
+    else:
+        print("\nUnification Failed!")
+        print("The expressions cannot be unified.")
+
+
+
+expression1 = input("Enter first expression: ")
+expression2 = input("Enter second expression: ")
+
+perform_unification(expression1, expression2)
+
